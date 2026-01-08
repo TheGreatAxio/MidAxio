@@ -1,11 +1,18 @@
-$sourceDir = "C:\Users\erict\WebstormProjects\MidAxio\Web"
-$nginxHtmlDir = "C:\nginx\html"
+$projectRoot = "$PSScriptRoot"
+$webSourceDir = Join-Path $projectRoot "Web"
+$nginxDir = "C:\nginx"
+$nginxHtmlDir = "$nginxDir\html"
 
-Copy-Item -Path $sourceDir -Destination $nginxHtmlDir -Recurse -Force
+Write-Host "--- Deploying Website ---" -ForegroundColor Cyan
 
-cd C:\nginx
-.\nginx.exe -s reload
+Write-Host "Syncing web files to Nginx..." -ForegroundColor Yellow
+Copy-Item -Path "$webSourceDir\*" -Destination $nginxHtmlDir -Recurse -Force
 
-Write-Host "Deployment Successful!" -ForegroundColor Green
-
-Start-Process "https://axioscomputers.com"
+Push-Location $nginxDir
+try {
+    .\nginx.exe -s reload
+    Write-Host "Success! Your changes are now live." -ForegroundColor Green
+} catch {
+    Write-Host "Error: Nginx failed to reload." -ForegroundColor Red
+}
+Pop-Location
