@@ -3,10 +3,10 @@ async function loadComponents() {
         'global-nav': 'components/navbar.html',
         'side-sidebar': 'components/sidebar.html',
         'ad-footer': 'components/footer.html',
-        'region-selector-container': 'components/region-selector.html' // New entry
+        'region-selector-container': 'components/region-selector.html'
     };
 
-    for (const [className, filePath] of Object.entries(components)) {
+    const promises = Object.entries(components).map(async ([className, filePath]) => {
         const element = document.querySelector(`.${className}`);
         if (element) {
             try {
@@ -19,20 +19,20 @@ async function loadComponents() {
                 console.error(err);
             }
         }
-    }
+    });
+
+    await Promise.all(promises);
+    updateAuthUI();
 }
 
 function updateAuthUI() {
     const token = localStorage.getItem('token');
     const path = window.location.pathname;
-
-    const isAuthPage = path.includes('login.html') || path.includes('signup.html');
-    const isAccountPage = path.includes('account.html');
-
     const loggedOutLinks = document.getElementById('loggedOutLinks');
     const loggedInLinks = document.getElementById('loggedInLinks');
+    const isAuthPage = path.includes('login.html') || path.includes('signup.html');
 
-    if (isAuthPage || isAccountPage) {
+    if (isAuthPage) {
         if (loggedOutLinks) loggedOutLinks.style.display = 'none';
         if (loggedInLinks) loggedInLinks.style.display = 'none';
     } else {
@@ -66,6 +66,7 @@ const signupForm = document.getElementById('signupForm');
 if (signupForm) {
     signupForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        const username = document.getElementById('username').value;
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
         const messageElement = document.getElementById('message');
@@ -74,7 +75,7 @@ if (signupForm) {
             const response = await fetch('https://api.axioscomputers.com/api/v1/auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
+                body: JSON.stringify({ username, email, password })
             });
             const data = await response.json();
             messageElement.innerText = response.ok ? "Check your email to verify!" : (data.message || "Registration failed.");
@@ -133,7 +134,6 @@ async function fetchUserProfile() {
 
         if (response.ok) {
             const user = await response.json();
-
             const riotStatusHTML = user.riotLinked
                 ? `<span style="color: lightgreen;">✅ Linked (${user.gameName}#${user.tagLine})</span>`
                 : `<span style="color: orange;">❌ Not Linked</span>`;
@@ -163,15 +163,12 @@ if (verifyBtn) {
     verifyBtn.addEventListener('click', async () => {
         const gameName = document.getElementById('riotName').value;
         const tagLine = document.getElementById('riotTag').value;
-
         const leagueRegion = document.getElementById('regionSelect').value;
-
         const messageElement = document.getElementById('verifyMessage');
         const token = localStorage.getItem('token');
 
         try {
             messageElement.innerText = "Initiating...";
-
             const response = await fetch('https://api.axioscomputers.com/api/v1/user/ign/initiate', {
                 method: 'POST',
                 headers: {
@@ -180,12 +177,21 @@ if (verifyBtn) {
                 },
                 body: JSON.stringify({ gameName, tagLine, leagueRegion })
             });
-
             const text = await response.text();
 
             if (response.ok) {
-                messageElement.style.color = "orange";
-                messageElement.innerText = text;
+                const iconId = text.match(/\d+/)[0];
+                const iconUrl = `https://ddragon.leagueoflegends.com/cdn/10.18.1/img/profileicon/${iconId}.png`;
+
+                messageElement.style.color = "white";
+                messageElement.innerHTML = `
+                    <div style="margin: 15px 0; text-align: center;">
+                        <p style="color: orange; font-weight: bold;">Action Required:</p>
+                        <p>Change your League icon to this picture:</p>
+                        <img src="${iconUrl}" alt="Target Icon" style="width: 80px; height: 80px; border: 2px solid #4169e1; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
+                        <p style="font-size: 0.85rem; color: #aaa;">Once changed, click the button below.</p>
+                    </div>
+                `;
 
                 verifyBtn.innerText = "Confirm Icon Change";
                 verifyBtn.onclick = confirmVerification;

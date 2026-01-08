@@ -1,24 +1,27 @@
 package com.axios.midaxio.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Getter
-@Setter
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class IgnVerificationTask {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String puuid;
-    private int requiredIconId;
-    private LocalDateTime expiryDate;
-
     @OneToOne
     @JoinColumn(name = "user_id")
     private User user;
+
+    private String puuid;
+    private String gameName;
+    private String tagLine;
+    private int requiredIconId;
+    private LocalDateTime expiryDate;
 }

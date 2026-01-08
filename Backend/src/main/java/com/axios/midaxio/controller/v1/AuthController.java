@@ -47,15 +47,16 @@ public class AuthController {
 
     @PostMapping("/ign/initiate")
     public ResponseEntity<?> initiateIgn(@RequestBody IgnVerificationRequest request) {
-        User currentUser = getCurrentUser();
+        User user = getCurrentUser();
 
-        String instruction = authService.initiateIgnVerification(
-                currentUser,
+        String message = authService.initiateIgnVerification(
+                user,
                 request.gameName(),
-                request.tagLine()
+                request.tagLine(),
+                request.leagueRegion()
         );
 
-        return ResponseEntity.ok(instruction);
+        return ResponseEntity.ok(message);
     }
 
     @PostMapping("/ign/confirm")

@@ -35,8 +35,9 @@ public class UserController {
     }
 
     private User getCurrentUser() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return (User) auth.getPrincipal();
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
     @PostMapping("/ign/confirm")
@@ -48,12 +49,6 @@ public class UserController {
             return ResponseEntity.ok("Account verified successfully!");
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Icon mismatch.");
-    }
-
-    private User getCurrentUser() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
     @GetMapping("/me")

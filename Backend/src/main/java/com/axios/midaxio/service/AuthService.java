@@ -106,11 +106,13 @@ public class AuthService {
 
         task.setUser(user);
         task.setPuuid(puuid);
+        task.setGameName(gameName);
+        task.setTagLine(tagLine);
         task.setRequiredIconId(randomIconId);
         task.setExpiryDate(LocalDateTime.now().plusMinutes(15));
-
         user.setLeagueRegion(region);
         userRepository.save(user);
+
         verificationTaskRepository.save(task);
 
         return "Please change your League of Legends profile icon to ID: " + randomIconId + " then click Verify.";
@@ -129,6 +131,8 @@ public class AuthService {
         if (currentIconId == task.getRequiredIconId()) {
             user.setIgnVerified(true);
             user.setPuuid(task.getPuuid());
+            user.setGameName(task.getGameName());
+            user.setTagLine(task.getTagLine());
             userRepository.save(user);
 
             verificationTaskRepository.delete(task);

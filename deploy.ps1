@@ -1,18 +1,16 @@
 $projectRoot = "$PSScriptRoot"
-$webSourceDir = Join-Path $projectRoot "Web"
-$nginxDir = "C:\nginx"
-$nginxHtmlDir = "$nginxDir\html"
+$sourceDir = Join-Path $projectRoot "Web"
+$nginxHtmlDir = "C:\nginx\html"
 
-Write-Host "--- Deploying Website ---" -ForegroundColor Cyan
+Write-Host "Syncing files from: $sourceDir" -ForegroundColor Cyan
 
-Write-Host "Syncing web files to Nginx..." -ForegroundColor Yellow
-Copy-Item -Path "$webSourceDir\*" -Destination $nginxHtmlDir -Recurse -Force
+Copy-Item -Path "$sourceDir\*" -Destination $nginxHtmlDir -Recurse -Force
 
-Push-Location $nginxDir
+Push-Location C:\nginx
 try {
     .\nginx.exe -s reload
-    Write-Host "Success! Your changes are now live." -ForegroundColor Green
+    Write-Host "Deployment Successful! Nginx reloaded." -ForegroundColor Green
 } catch {
-    Write-Host "Error: Nginx failed to reload." -ForegroundColor Red
+    Write-Host "Failed to reload Nginx. Is it running?" -ForegroundColor Red
 }
 Pop-Location

@@ -15,11 +15,11 @@ public class EmailService {
         SimpleMailMessage message = new SimpleMailMessage();
 
         message.setFrom("midaxio@axioscomputers.com");
-
         message.setTo(to);
         message.setSubject("Verify your MidAxio Account");
+
         message.setText("Welcome! Please verify your account here: " +
-                "http://localhost:8080/api/v1/auth/verify?token=" + token);
+                "https://axioscomputers.com/verify?token=" + token);
 
         mailSender.send(message);
     }
