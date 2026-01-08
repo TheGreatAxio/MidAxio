@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>midAxio - My Account</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="global-nav"></nav>
+<aside class="side-sidebar"></aside>
+
+<main class="main-container">
+    <div class="auth-container">
+        <h1>My Account</h1>
+
+        <div id="userProfile">
+            <p>Loading user data...</p>
+        </div>
+
+        <div class="verification-section">
+            <h3>Riot Account Verification</h3>
+            <p>Link your account to track your match history.</p>
+
+            <div class="input-group">
+                <input type="text" id="riotName" placeholder="Game Name" class="auth-input">
+                <input type="text" id="riotTag" placeholder="TAG" class="auth-input" maxlength="5">
+            </div>
+
+            <button id="verifyBtn" class="nav-button">Verify Account</button>
+            <p id="verifyMessage"></p>
+        </div>
+    </div>
+</main>
+
+<footer class="ad-footer"></footer>
+
+<script src="js/script.js"></script>
+</body>
+</html>
