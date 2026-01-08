@@ -2,6 +2,7 @@ package com.axios.midaxio.service;
 
 import com.axios.midaxio.dto.*;
 import com.axios.midaxio.entity.IgnVerificationTask;
+import com.axios.midaxio.model.LeagueRegion;
 import com.axios.midaxio.model.Role;
 import com.axios.midaxio.entity.User;
 import com.axios.midaxio.entity.VerificationToken;
@@ -95,8 +96,8 @@ public class AuthService {
         );
     }
 
-    public String initiateIgnVerification(User user, String gameName, String tagLine) {
-        String puuid = riotApiService.getPuuid(gameName, tagLine, user.getLeagueRegion());
+    public String initiateIgnVerification(User user, String gameName, String tagLine, LeagueRegion region) {
+        String puuid = riotApiService.getPuuid(gameName, tagLine, region);
 
         int randomIconId = new Random().nextInt(29);
 
@@ -108,6 +109,8 @@ public class AuthService {
         task.setRequiredIconId(randomIconId);
         task.setExpiryDate(LocalDateTime.now().plusMinutes(15));
 
+        user.setLeagueRegion(region);
+        userRepository.save(user);
         verificationTaskRepository.save(task);
 
         return "Please change your League of Legends profile icon to ID: " + randomIconId + " then click Verify.";

@@ -27,10 +27,16 @@ public class UserController {
         String message = authService.initiateIgnVerification(
                 user,
                 request.gameName(),
-                request.tagLine()
+                request.tagLine(),
+                request.leagueRegion()
         );
 
         return ResponseEntity.ok(message);
+    }
+
+    private User getCurrentUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return (User) auth.getPrincipal();
     }
 
     @PostMapping("/ign/confirm")
