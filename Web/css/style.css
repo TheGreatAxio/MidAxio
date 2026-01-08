@@ -263,3 +263,15 @@ body:has(.side-sidebar:hover) .sidebar-item {
     margin-top: auto;
     padding-bottom: 20px;
 }
+
+.region-dropdown {
+    display: block;
+    margin: 15px 0;
+    padding: 12px;
+    width: 280px;
+    background-color: #2a2a2a;
+    border: 1px solid #444;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+}

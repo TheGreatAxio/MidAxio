@@ -2,7 +2,8 @@ async function loadComponents() {
     const components = {
         'global-nav': 'components/navbar.html',
         'side-sidebar': 'components/sidebar.html',
-        'ad-footer': 'components/footer.html'
+        'ad-footer': 'components/footer.html',
+        'region-selector-container': 'components/region-selector.html' // New entry
     };
 
     for (const [className, filePath] of Object.entries(components)) {
@@ -13,10 +14,6 @@ async function loadComponents() {
                 if (response.ok) {
                     const html = await response.text();
                     element.innerHTML = html;
-
-                    if (className === 'global-nav' || className === 'side-sidebar') {
-                        updateAuthUI();
-                    }
                 }
             } catch (err) {
                 console.error(err);
@@ -166,40 +163,63 @@ if (verifyBtn) {
     verifyBtn.addEventListener('click', async () => {
         const gameName = document.getElementById('riotName').value;
         const tagLine = document.getElementById('riotTag').value;
+
+        const leagueRegion = document.getElementById('regionSelect').value;
+
         const messageElement = document.getElementById('verifyMessage');
         const token = localStorage.getItem('token');
 
-        if (!token) {
-            messageElement.innerText = "Please log in first.";
-            return;
-        }
-
         try {
-            messageElement.innerText = "Verifying...";
+            messageElement.innerText = "Initiating...";
 
-            const response = await fetch('https://api.axioscomputers.com/api/v1/user/verify-riot', {
+            const response = await fetch('https://api.axioscomputers.com/api/v1/user/ign/initiate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ gameName, tagLine })
+                body: JSON.stringify({ gameName, tagLine, leagueRegion })
             });
 
-            const data = await response.json();
+            const text = await response.text();
 
             if (response.ok) {
-                messageElement.style.color = "lightgreen";
-                messageElement.innerText = "Success! Account linked.";
-                setTimeout(() => fetchUserProfile(), 1500);
+                messageElement.style.color = "orange";
+                messageElement.innerText = text;
+
+                verifyBtn.innerText = "Confirm Icon Change";
+                verifyBtn.onclick = confirmVerification;
             } else {
                 messageElement.style.color = "red";
-                messageElement.innerText = data.message || "Verification failed.";
+                messageElement.innerText = text || "Initiation failed.";
             }
         } catch (error) {
             messageElement.innerText = "Error connecting to server.";
         }
     });
+}
+
+async function confirmVerification() {
+    const token = localStorage.getItem('token');
+    const messageElement = document.getElementById('verifyMessage');
+
+    try {
+        const response = await fetch('https://api.axioscomputers.com/api/v1/user/ign/confirm', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+            messageElement.style.color = "lightgreen";
+            messageElement.innerText = "Success! Account linked.";
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            const errorText = await response.text();
+            messageElement.innerText = errorText || "Icon mismatch. Try again.";
+        }
+    } catch (error) {
+        messageElement.innerText = "Error connecting to server.";
+    }
 }
 
 window.addEventListener('DOMContentLoaded', () => {

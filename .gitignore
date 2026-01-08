@@ -1,12 +1,14 @@
 ### Secrets ###
 .env
+Backend/.env
 
 ### MVN Target Output ###
 target/
 .mvn/
-
-### README ###
-README.md
+out/
+Backend/target/
+Backend/out/
+Backend/.mvn/
 
 ### IntelliJ IDEA ###
 out/
