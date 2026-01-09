@@ -23,4 +23,17 @@ public class EmailService {
 
         mailSender.send(message);
     }
+
+    public void sendPasswordResetEmail(String to, String token) {
+        SimpleMailMessage message = new SimpleMailMessage();
+
+        message.setFrom("midaxio@axioscomputers.com");
+        message.setTo(to);
+        message.setSubject("Reset Your MidAxio Password");
+
+        message.setText("To reset your password, please click the link below: " +
+                "https://axioscomputers.com/resetpassword?token=" + token);
+
+        mailSender.send(message);
+    }
 }

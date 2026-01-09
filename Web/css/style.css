@@ -1,3 +1,7 @@
+* {
+    box-sizing: border-box;
+}
+
 body {
     background-color: #121212;
     color: white;
@@ -200,13 +204,15 @@ body:has(.side-sidebar:hover) .sidebar-item {
     border-radius: 8px;
     border: 1px solid #333;
     box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    width: 400px;
+    ax-width: 90%;
 }
 
 .auth-container input {
     display: block;
     margin: 15px 0;
     padding: 12px;
-    width: 280px;
+    width: 100%;
     background-color: #2a2a2a;
     border: 1px solid #444;
     color: white;
@@ -268,7 +274,7 @@ body:has(.side-sidebar:hover) .sidebar-item {
     display: block;
     margin: 15px 0;
     padding: 12px;
-    width: 280px;
+    width: 100%;
     background-color: #2a2a2a;
     border: 1px solid #444;
     color: white;

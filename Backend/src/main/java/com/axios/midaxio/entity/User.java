@@ -6,7 +6,6 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -38,6 +37,9 @@ public class User implements UserDetails {
 
     @Column(nullable = true)
     private String tagLine;
+
+    @Column(nullable = true)
+    private String resetToken;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = true)

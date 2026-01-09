@@ -30,7 +30,7 @@ function updateAuthUI() {
     const path = window.location.pathname;
     const loggedOutLinks = document.getElementById('loggedOutLinks');
     const loggedInLinks = document.getElementById('loggedInLinks');
-    const isAuthPage = path.includes('login.html') || path.includes('signup.html');
+    const isAuthPage = path.includes('login') || path.includes('signup');
 
     if (isAuthPage) {
         if (loggedOutLinks) loggedOutLinks.style.display = 'none';
@@ -55,7 +55,7 @@ function updateAuthUI() {
         `;
         document.getElementById('logoutBtn').addEventListener('click', () => {
             localStorage.removeItem('token');
-            window.location.href = 'index.html';
+            window.location.href = 'index';
         });
     } else if (authZone) {
         authZone.innerHTML = '';
@@ -90,7 +90,7 @@ const loginForm = document.getElementById('loginForm');
 if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const email = document.getElementById('loginEmail').value;
+        const identifier = document.getElementById('loginIdentifier').value;
         const password = document.getElementById('loginPassword').value;
         const messageElement = document.getElementById('loginMessage');
 
@@ -98,17 +98,25 @@ if (loginForm) {
             const response = await fetch('https://api.axioscomputers.com/api/v1/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
+                body: JSON.stringify({ identifier, password })
             });
-            const data = await response.json();
+
+            const responseText = await response.text();
+            let data;
+            try {
+                data = JSON.parse(responseText);
+            } catch (err) {
+                data = { message: responseText };
+            }
+
             if (response.ok) {
                 localStorage.setItem('token', data.token);
                 messageElement.style.color = "lightgreen";
                 messageElement.innerText = "Login Successful!";
-                setTimeout(() => { window.location.href = 'index.html'; }, 1000);
+                setTimeout(() => { window.location.href = 'index'; }, 1000);
             } else {
                 messageElement.style.color = "red";
-                messageElement.innerText = "Login failed: Check credentials.";
+                messageElement.innerText = data.message || data.error || responseText || "Login failed.";
             }
         } catch (error) {
             messageElement.innerText = "Error connecting to server.";
@@ -122,7 +130,7 @@ async function fetchUserProfile() {
 
     const token = localStorage.getItem('token');
     if (!token) {
-        window.location.href = 'login.html';
+        window.location.href = 'login';
         return;
     }
 
@@ -151,7 +159,7 @@ async function fetchUserProfile() {
             }
         } else if (response.status === 401) {
             localStorage.removeItem('token');
-            window.location.href = 'login.html';
+            window.location.href = 'login';
         }
     } catch (error) {
         profileDiv.innerHTML = `<p style="color: red;">Error loading profile data.</p>`;
@@ -181,7 +189,7 @@ if (verifyBtn) {
 
             if (response.ok) {
                 const iconId = text.match(/\d+/)[0];
-                const iconUrl = `https://ddragon.leagueoflegends.com/cdn/10.18.1/img/profileicon/${iconId}.png`;
+                const iconUrl = `https://ddragon.leagueoflegends.com/cdn/26.01.1/img/profileicon/${iconId}.png`;
 
                 messageElement.style.color = "white";
                 messageElement.innerHTML = `

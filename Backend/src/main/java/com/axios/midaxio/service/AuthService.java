@@ -1,12 +1,8 @@
 package com.axios.midaxio.service;
 
 import com.axios.midaxio.dto.*;
-import com.axios.midaxio.entity.IgnVerificationTask;
-import com.axios.midaxio.model.LeagueRegion;
-import com.axios.midaxio.model.Role;
 import com.axios.midaxio.entity.User;
 import com.axios.midaxio.entity.VerificationToken;
-import com.axios.midaxio.repository.IgnVerificationTaskRepository;
 import com.axios.midaxio.repository.UserRepository;
 import com.axios.midaxio.repository.VerificationTokenRepository;
 import jakarta.transaction.Transactional;
@@ -16,9 +12,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
-import java.util.Random;
 import java.util.UUID;
 
 @Service
@@ -30,18 +23,17 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final EmailService emailService;
     private final VerificationTokenRepository tokenRepository;
-    private final RiotApiService riotApiService;
-    private final IgnVerificationTaskRepository verificationTaskRepository;
+    private final UserService userService;
 
     public AuthResponse register(RegisterRequest request) {
         User user = new User();
         user.setUsername(request.username());
         user.setEmail(request.email());
         user.setPassword(passwordEncoder.encode(request.password()));
-        user.setRole(Role.USER);
+        user.setRole(com.axios.midaxio.model.Role.USER);
         user.setEmailVerified(false);
 
-        userRepository.save(user);
+        userService.saveUser(user);
 
         String token = UUID.randomUUID().toString();
         VerificationToken verificationToken = new VerificationToken(token, user);
@@ -49,31 +41,20 @@ public class AuthService {
 
         emailService.sendVerificationEmail(user.getEmail(), token);
 
-        return new AuthResponse(
-                null,
-                user.getEmail(),
-                "Registration successful! Please check your email to verify your account."
-        );
+        return new AuthResponse(null, user.getEmail(), "Registration successful!");
     }
 
     public AuthResponse login(LoginRequest request) {
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.email(),
-                        request.password()
-                )
+                new UsernamePasswordAuthenticationToken(request.identifier(), request.password())
         );
 
-        var user = userRepository.findByEmail(request.email())
+        var user = userRepository.findByEmail(request.identifier())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         var jwtToken = jwtService.generateToken(user.getEmail());
 
-        return new AuthResponse(
-                jwtToken,
-                user.getEmail(),
-                "Login successful!"
-        );
+        return new AuthResponse(jwtToken, user.getEmail(), "Login successful!");
     }
 
     @Transactional
@@ -83,62 +64,41 @@ public class AuthService {
 
         User user = verificationToken.getUser();
         user.setEmailVerified(true);
-        userRepository.save(user);
-
+        userService.saveUser(user);
         tokenRepository.delete(verificationToken);
 
         String jwtToken = jwtService.generateToken(user.getEmail());
 
-        return new AuthResponse(
-                jwtToken,
-                user.getEmail(),
-                "Account verified successfully!"
-        );
+        return new AuthResponse(jwtToken, user.getEmail(), "Account verified!");
     }
 
-    public String initiateIgnVerification(User user, String gameName, String tagLine, LeagueRegion region) {
-        String puuid = riotApiService.getPuuid(gameName, tagLine, region);
-
-        int randomIconId = new Random().nextInt(29);
-
-        IgnVerificationTask task = verificationTaskRepository.findByUser(user)
-                .orElse(new IgnVerificationTask());
-
-        task.setUser(user);
-        task.setPuuid(puuid);
-        task.setGameName(gameName);
-        task.setTagLine(tagLine);
-        task.setRequiredIconId(randomIconId);
-        task.setExpiryDate(LocalDateTime.now().plusMinutes(15));
-        user.setLeagueRegion(region);
-        userRepository.save(user);
-
-        verificationTaskRepository.save(task);
-
-        return "Please change your League of Legends profile icon to ID: " + randomIconId + " then click Verify.";
+    public void initiatePasswordReset(String email) {
+        userRepository.findByEmail(email).ifPresent(user -> {
+            String token = UUID.randomUUID().toString();
+            user.setResetToken(token);
+            userService.saveUser(user);
+            emailService.sendPasswordResetEmail(user.getEmail(), token);
+        });
     }
 
-    public boolean confirmIgnVerification(User user) {
-        IgnVerificationTask task = verificationTaskRepository.findByUser(user)
-                .orElseThrow(() -> new RuntimeException("No pending verification found. Please initiate first."));
+    @Transactional
+    public boolean completePasswordReset(String token, String newPassword) {
+        System.out.println("DEBUG RESET: Token received: " + token);
+        System.out.println("DEBUG RESET: Password received: " + (newPassword == null ? "NULL" : newPassword));
 
-        if (LocalDateTime.now().isAfter(task.getExpiryDate())) {
-            throw new RuntimeException("Verification expired. Please try again.");
+        if (newPassword == null || newPassword.trim().isEmpty()) {
+            throw new IllegalArgumentException("Password cannot be empty or null");
         }
 
-        int currentIconId = riotApiService.getProfileIconId(task.getPuuid(), user.getLeagueRegion());
+        return userRepository.findByResetToken(token).map(user -> {
+            String encodedPassword = passwordEncoder.encode(newPassword);
+            System.out.println("DEBUG RESET: Encoded Password: " + encodedPassword);
 
-        if (currentIconId == task.getRequiredIconId()) {
-            user.setIgnVerified(true);
-            user.setPuuid(task.getPuuid());
-            user.setGameName(task.getGameName());
-            user.setTagLine(task.getTagLine());
+            user.setPassword(encodedPassword);
+            user.setResetToken(null);
+
             userRepository.save(user);
-
-            verificationTaskRepository.delete(task);
             return true;
-        }
-
-        return false;
+        }).orElse(false);
     }
 }

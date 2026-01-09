@@ -1,11 +1,9 @@
 package com.axios.midaxio.controller.v1;
 
-import com.axios.midaxio.dto.AuthResponse;
-import com.axios.midaxio.dto.IgnVerificationRequest;
-import com.axios.midaxio.dto.LoginRequest;
-import com.axios.midaxio.dto.RegisterRequest;
+import com.axios.midaxio.dto.*;
 import com.axios.midaxio.entity.User;
 import com.axios.midaxio.service.AuthService;
+import com.axios.midaxio.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,15 +15,16 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/auth")
 public class AuthController {
     private final AuthService authService;
+    private final UserService userService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, UserService userService) {
         this.authService = authService;
+        this.userService = userService;
     }
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
         AuthResponse response = authService.register(request);
-
         return ResponseEntity.ok(response);
     }
 
@@ -45,30 +44,43 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+        authService.initiatePasswordReset(request.getEmail());
+        return ResponseEntity.ok("If an account exists, a reset link has been sent.");
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request) {
+        boolean success = authService.completePasswordReset(request.getToken(), request.getNewPassword());
+        if (success) {
+            return ResponseEntity.ok("Password updated successfully.");
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid or expired token.");
+    }
+
     @PostMapping("/ign/initiate")
     public ResponseEntity<?> initiateIgn(@RequestBody IgnVerificationRequest request) {
         User user = getCurrentUser();
-
-        String message = authService.initiateIgnVerification(
+        String message = userService.initiateIgnVerification(
                 user,
                 request.gameName(),
                 request.tagLine(),
                 request.leagueRegion()
         );
-
         return ResponseEntity.ok(message);
     }
 
     @PostMapping("/ign/confirm")
     public ResponseEntity<?> confirmIgn() {
         User currentUser = getCurrentUser();
-
-        boolean isSuccess = authService.confirmIgnVerification(currentUser);
+        boolean isSuccess = userService.confirmIgnVerification(currentUser);
         if (isSuccess) {
             return ResponseEntity.ok("Account verified successfully!");
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Icon mismatch detected.");
     }
+
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {

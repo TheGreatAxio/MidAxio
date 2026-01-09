@@ -51,18 +51,22 @@ public class SecurityConfig {
 
         configuration.setAllowedOrigins(List.of(
                 "https://axioscomputers.com",
+                "https://www.axioscomputers.com",
                 "http://localhost:5500",
                 "http://127.0.0.1:5500"
         ));
 
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of(
                 "Authorization",
                 "Content-Type",
                 "X-Requested-With",
-                "Accept"
+                "Accept",
+                "Origin"
         ));
         configuration.setExposedHeaders(List.of("Authorization"));
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
