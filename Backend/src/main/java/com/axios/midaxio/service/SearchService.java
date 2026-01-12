@@ -109,14 +109,21 @@ public class SearchService {
                 .collect(Collectors.toList());
         results.addAll(champMatches);
 
-        userRepository.findByGameNameContainingIgnoreCase(query).stream()
-                .limit(3)
-                .forEach(user -> results.add(new SearchResult(
-                        user.getGameName() + "#" + user.getTagLine(),
-                        "Summoner",
-                        "/profile/" + user.getGameName() + "-" + user.getTagLine(),
-                        "https://ddragon.leagueoflegends.com/cdn/" + FALLBACK_VERSION + "/img/profileicon/29.png"
-                )));
+        String searchName = query;
+        if (query.contains("#")) {
+            searchName = query.substring(0, query.indexOf('#'));
+        }
+
+        if (!searchName.isEmpty()) {
+            userRepository.findByGameNameContainingIgnoreCase(searchName).stream()
+                    .limit(3)
+                    .forEach(user -> results.add(new SearchResult(
+                            user.getGameName() + "#" + user.getTagLine(),
+                            "Summoner",
+                            "/profile/" + user.getGameName() + "-" + user.getTagLine(),
+                            "https://ddragon.leagueoflegends.com/cdn/" + FALLBACK_VERSION + "/img/profileicon/29.png"
+                    )));
+        }
 
         return results;
     }

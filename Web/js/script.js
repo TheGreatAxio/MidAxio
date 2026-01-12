@@ -1,9 +1,9 @@
 async function loadComponents() {
     const components = {
-        'global-nav': 'components/navbar.html',
-        'side-sidebar': 'components/sidebar.html',
-        'ad-footer': 'components/footer.html',
-        'region-selector-container': 'components/region-selector.html'
+        'global-nav': '/components/navbar.html',
+        'side-sidebar': '/components/sidebar.html',
+        'ad-footer': '/components/footer.html',
+        'region-selector-container': '/components/region-selector.html'
     };
 
     const promises = Object.entries(components).map(async ([className, filePath]) => {
@@ -23,7 +23,16 @@ async function loadComponents() {
 
     await Promise.all(promises);
     updateAuthUI();
-    setupSearch();
+
+    const isHomePage = window.location.pathname === '/' || window.location.pathname === '/index.html';
+    if (isHomePage) {
+        document.body.classList.add('home-page');
+        setupSearch('homeSearchInput', 'homeSearchDropdown');
+    } else {
+        setupSearch('globalSearchInput', 'searchDropdown', 'globalSearchBtn');
+    }
+
+    fetchUserProfile();
 }
 
 function updateAuthUI() {
@@ -56,7 +65,7 @@ function updateAuthUI() {
         `;
         document.getElementById('logoutBtn').addEventListener('click', () => {
             localStorage.removeItem('token');
-            window.location.href = 'index';
+            window.location.href = '/';
         });
     } else if (authZone) {
         authZone.innerHTML = '';
@@ -114,7 +123,7 @@ if (loginForm) {
                 localStorage.setItem('token', data.token);
                 messageElement.style.color = "lightgreen";
                 messageElement.innerText = "Login Successful!";
-                setTimeout(() => { window.location.href = 'index'; }, 1000);
+                setTimeout(() => { window.location.href = '/'; }, 1000);
             } else {
                 messageElement.style.color = "red";
                 messageElement.innerText = data.message || data.error || responseText || "Login failed.";
@@ -126,14 +135,8 @@ if (loginForm) {
 }
 
 async function fetchUserProfile() {
-    const profileDiv = document.getElementById('userProfile');
-    if (!profileDiv) return;
-
     const token = localStorage.getItem('token');
-    if (!token) {
-        window.location.href = 'login';
-        return;
-    }
+    if (!token) return;
 
     try {
         const response = await fetch('https://api.axioscomputers.com/api/v1/user/me', {
@@ -143,27 +146,44 @@ async function fetchUserProfile() {
 
         if (response.ok) {
             const user = await response.json();
-            const riotStatusHTML = user.riotLinked
-                ? `<span style="color: lightgreen;">✅ Linked (${user.gameName}#${user.tagLine})</span>`
-                : `<span style="color: orange;">❌ Not Linked</span>`;
-
-            profileDiv.innerHTML = `
-                <div class="profile-details">
-                    <p><strong>Email:</strong> ${user.email}</p>
-                    <p><strong>Riot Account:</strong> ${riotStatusHTML}</p>
-                </div>
-            `;
 
             if (user.riotLinked) {
+                const authZone = document.getElementById('sidebarAuthZone');
+                if (authZone) {
+                    const profileBtn = document.createElement('div');
+                    profileBtn.className = 'sidebar-item';
+                    profileBtn.title = 'My Profile';
+                    profileBtn.onclick = () => window.location.href = `/profile/${user.gameName}-${user.tagLine}`;
+                    profileBtn.innerHTML = `
+                        <span class="icon">👤</span>
+                        <span class="label">Profile</span>
+                    `;
+
+                    authZone.insertBefore(profileBtn, authZone.firstChild);
+                }
+
                 const vSection = document.querySelector('.verification-section');
                 if (vSection) vSection.style.display = 'none';
             }
+
+            const profileDiv = document.getElementById('userProfile');
+            if (profileDiv) {
+                const riotStatusHTML = user.riotLinked
+                    ? `<span style="color: lightgreen;">✅ Linked (${user.gameName}#${user.tagLine})</span>`
+                    : `<span style="color: orange;">❌ Not Linked</span>`;
+
+                profileDiv.innerHTML = `
+                    <div class="profile-details">
+                        <p><strong>Email:</strong> ${user.email}</p>
+                        <p><strong>Riot Account:</strong> ${riotStatusHTML}</p>
+                    </div>
+                `;
+            }
         } else if (response.status === 401) {
             localStorage.removeItem('token');
-            window.location.href = 'login';
         }
     } catch (error) {
-        profileDiv.innerHTML = `<p style="color: red;">Error loading profile data.</p>`;
+        console.error("Failed to fetch profile");
     }
 }
 
@@ -240,104 +260,105 @@ async function confirmVerification() {
 let searchTimeout = null;
 let currentSelectionIndex = -1;
 
-function setupSearch() {
-    const searchInput = document.getElementById('globalSearchInput');
-    const searchContainer = document.querySelector('.nav-search');
-    const dropdown = document.getElementById('searchDropdown');
-    const searchBtn = document.getElementById('globalSearchBtn');
+function setupSearch(inputId, dropdownId, btnId = null) {
+    const searchInput = document.getElementById(inputId);
+    const dropdown = document.getElementById(dropdownId);
+    const searchBtn = btnId ? document.getElementById(btnId) : null;
 
-    if (!searchInput || !searchContainer || !dropdown) return;
+    if (!searchInput || !dropdown) return;
 
     searchInput.addEventListener('input', (e) => {
         const query = e.target.value.trim();
         clearTimeout(searchTimeout);
 
         if (query.length < 2) {
-            closeDropdown();
+            closeDropdown(dropdownId);
             return;
         }
 
-        searchTimeout = setTimeout(() => performSearch(query), 300);
+        searchTimeout = setTimeout(() => performSearch(query, dropdownId), 300);
     });
 
     searchInput.addEventListener('keydown', (e) => {
-        const items = document.querySelectorAll('.search-item');
-        if (items.length === 0) return;
+        const items = dropdown.querySelectorAll('.search-item');
 
         if (e.key === 'ArrowDown') {
+            if (items.length === 0) return;
             e.preventDefault();
             currentSelectionIndex++;
             if (currentSelectionIndex >= items.length) currentSelectionIndex = 0;
             updateSelection(items);
         } else if (e.key === 'ArrowUp') {
+            if (items.length === 0) return;
             e.preventDefault();
             currentSelectionIndex--;
             if (currentSelectionIndex < 0) currentSelectionIndex = items.length - 1;
             updateSelection(items);
         } else if (e.key === 'Enter') {
             e.preventDefault();
-            if (currentSelectionIndex > -1) {
+            if (currentSelectionIndex > -1 && items[currentSelectionIndex]) {
                 items[currentSelectionIndex].click();
             } else {
-                performSearch(searchInput.value, true);
+                performRedirect(searchInput.value, true);
             }
         } else if (e.key === 'Escape') {
-            closeDropdown();
+            closeDropdown(dropdownId);
         }
     });
 
     document.addEventListener('click', (e) => {
-        if (!searchContainer.contains(e.target)) {
-            closeDropdown();
+        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+            closeDropdown(dropdownId);
         }
     });
 
     if (searchBtn) {
         searchBtn.addEventListener('click', () => {
-            performSearch(searchInput.value, true);
+            performRedirect(searchInput.value, true);
         });
     }
 }
 
-async function performSearch(query, forceRedirect = false) {
+async function performSearch(query, dropdownId) {
+    try {
+        const response = await fetch(`https://api.axioscomputers.com/api/v1/search/autocomplete?query=${encodeURIComponent(query)}`);
+
+        if (response.ok) {
+            const results = await response.json();
+            renderResults(results, dropdownId);
+        } else {
+            renderResults([
+                { name: query, type: 'Summoner', url: `/profile/${query}`, image: '' },
+                { name: "Ahri", type: "Champion", url: "/champion/ahri", image: "https://ddragon.leagueoflegends.com/cdn/14.1.1/img/champion/Ahri.png" }
+            ], dropdownId);
+        }
+    } catch (error) {
+        renderResults([
+            { name: query, type: 'Summoner', url: `/profile/${query}`, image: '' },
+            { name: "Ahri", type: "Champion", url: "/champion/ahri", image: "https://ddragon.leagueoflegends.com/cdn/14.1.1/img/champion/Ahri.png" }
+        ], dropdownId);
+    }
+}
+
+function performRedirect(query, forceRedirect = false) {
     if (forceRedirect) {
         if (query.includes('#')) {
             window.location.href = `/profile/${encodeURIComponent(query)}`;
         } else {
             window.location.href = `/search?q=${encodeURIComponent(query)}`;
         }
-        return;
-    }
-
-    try {
-        const response = await fetch(`https://api.axioscomputers.com/api/v1/search/autocomplete?query=${encodeURIComponent(query)}`);
-
-        if (response.ok) {
-            const results = await response.json();
-            renderResults(results);
-        } else {
-            renderResults([
-                { name: query, type: 'Summoner', url: `/profile/${query}`, image: '' },
-                { name: "Ahri", type: "Champion", url: "/champion/ahri", image: "https://ddragon.leagueoflegends.com/cdn/14.1.1/img/champion/Ahri.png" }
-            ]);
-        }
-    } catch (error) {
-        renderResults([
-            { name: query, type: 'Summoner', url: `/profile/${query}`, image: '' },
-            { name: "Ahri", type: "Champion", url: "/champion/ahri", image: "https://ddragon.leagueoflegends.com/cdn/14.1.1/img/champion/Ahri.png" }
-        ]);
     }
 }
 
-function renderResults(results) {
-    const dropdown = document.getElementById('searchDropdown');
-    const searchContainer = document.querySelector('.nav-search');
+function renderResults(results, dropdownId) {
+    const dropdown = document.getElementById(dropdownId);
+    if (!dropdown) return;
 
     dropdown.innerHTML = '';
     currentSelectionIndex = -1;
 
     if (!results || results.length === 0) {
-        closeDropdown();
+        closeDropdown(dropdownId);
         return;
     }
 
@@ -347,7 +368,7 @@ function renderResults(results) {
         div.onclick = () => window.location.href = item.url;
 
         div.innerHTML = `
-            <img src="${item.image || 'assets/default-icon.png'}" alt="">
+            <img src="${item.image || '/assets/default-icon.png'}" alt="">
             <div class="info">
                 <span class="main-text">${item.name}</span>
                 <span class="sub-text">${item.type}</span>
@@ -356,7 +377,10 @@ function renderResults(results) {
         dropdown.appendChild(div);
     });
 
-    searchContainer.classList.add('open');
+    dropdown.classList.add('open');
+    if (dropdownId === 'searchDropdown') {
+        document.querySelector('.nav-search')?.classList.add('open');
+    }
 }
 
 function updateSelection(items) {
@@ -366,16 +390,19 @@ function updateSelection(items) {
     }
 }
 
-function closeDropdown() {
-    const searchContainer = document.querySelector('.nav-search');
-    const dropdown = document.getElementById('searchDropdown');
+function closeDropdown(dropdownId) {
+    const dropdown = document.getElementById(dropdownId);
+    if (dropdown) {
+        dropdown.classList.remove('open');
+        dropdown.innerHTML = '';
+    }
 
-    if (searchContainer) searchContainer.classList.remove('open');
-    if (dropdown) dropdown.innerHTML = '';
+    if (dropdownId === 'searchDropdown') {
+        document.querySelector('.nav-search')?.classList.remove('open');
+    }
     currentSelectionIndex = -1;
 }
 
 window.addEventListener('DOMContentLoaded', () => {
     loadComponents();
-    fetchUserProfile();
 });

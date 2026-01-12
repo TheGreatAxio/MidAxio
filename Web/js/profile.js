@@ -48,7 +48,7 @@ function renderHeader(data) {
 
     if (data.rankTier) {
         const rankEmblem = document.getElementById('rankEmblem');
-        rankEmblem.src = `assets/ranks/${data.rankTier.toLowerCase()}.png`;
+        rankEmblem.src = `/assets/ranks/${data.rankTier.toLowerCase()}.png`;
         rankEmblem.style.display = 'block';
 
         document.getElementById('rankTier').innerText = `${data.rankTier} ${data.rankDivision}`;

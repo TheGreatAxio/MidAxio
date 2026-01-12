@@ -16,8 +16,9 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    height: calc(100vh - 160px);
+    justify-content: flex-start;
+    min-height: 100vh;
+    padding-top: 40px;
     text-align: center;
     transition: margin-left 0.3s ease;
 }
@@ -557,4 +558,107 @@ body:has(.side-sidebar:hover) .sidebar-item {
 
 @keyframes spin {
     to { transform: rotate(360deg); }
+}
+
+body.home-page .nav-search {
+    display: none !important;
+}
+
+.home-search-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 800px;
+    margin-top: 10vh;
+}
+
+.home-logo {
+    width: 300px;
+    margin-bottom: 40px;
+}
+
+.home-search-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+}
+
+#homeSearchInput {
+    width: 100%;
+    padding: 20px 25px;
+    font-size: 1.2rem;
+    background-color: #1e1e1e;
+    border: 2px solid #333;
+    border-radius: 50px;
+    color: white;
+    outline: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    transition: all 0.2s;
+}
+
+#homeSearchInput:focus {
+    border-color: #4169e1;
+    box-shadow: 0 0 0 4px rgba(65, 105, 225, 0.2);
+}
+
+.home-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 20px;
+    right: 20px;
+    background-color: #2a2a2a;
+    border-radius: 12px;
+    margin-top: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    z-index: 1000;
+    max-height: 400px;
+    overflow-y: auto;
+    display: none;
+}
+
+.home-dropdown.open {
+    display: block;
+}
+
+.home-dropdown .search-item {
+    display: flex;
+    align-items: center;
+    padding: 15px 20px;
+    cursor: pointer;
+    border-bottom: 1px solid #333;
+    transition: background-color 0.2s;
+}
+
+.home-dropdown .search-item:last-child {
+    border-bottom: none;
+}
+
+.home-dropdown .search-item:hover,
+.home-dropdown .search-item.selected {
+    background-color: #333;
+}
+
+.home-dropdown img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 15px;
+}
+
+.home-dropdown .info {
+    display: flex;
+    flex-direction: column;
+}
+
+.home-dropdown .main-text {
+    font-weight: bold;
+    color: #fff;
+    font-size: 1rem;
+}
+
+.home-dropdown .sub-text {
+    font-size: 0.85rem;
+    color: #888;
 }
