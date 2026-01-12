@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Summoner Profile - MidAxio</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="global-nav"></nav>
+<aside class="side-sidebar"></aside>
+
+<main class="main-container">
+    <div class="profile-header-card">
+        <div class="header-left">
+            <div class="icon-wrapper">
+                <img id="profileIcon" src="assets/default-icon.png" alt="Icon">
+                <span id="summonerLevel" class="level-badge">--</span>
+            </div>
+            <div class="identity">
+                <h1 id="summonerName">Loading...</h1>
+                <p id="summonerTag" style="color: #888;">#NA1</p>
+                <button id="updateBtn" class="update-btn">Update</button>
+            </div>
+        </div>
+
+        <div class="header-right">
+            <div class="rank-info">
+                <img id="rankEmblem" src="" alt="" style="display: none; height: 60px;">
+                <div class="rank-text">
+                    <h2 id="rankTier">Unranked</h2>
+                    <p id="rankLP">0 LP</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="match-history-section">
+        <h3>Match History</h3>
+        <div id="matchList" class="match-list">
+        </div>
+
+        <div id="scrollLoader" class="scroll-loader" style="display: none;">
+            <div class="spinner"></div> Loading older games...
+        </div>
+    </div>
+</main>
+
+<script src="js/script.js"></script>
+<script src="js/profile.js"></script> </body>
+</html>
