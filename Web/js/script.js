@@ -23,6 +23,7 @@ async function loadComponents() {
 
     await Promise.all(promises);
     updateAuthUI();
+    setupSearch();
 }
 
 function updateAuthUI() {
@@ -234,6 +235,144 @@ async function confirmVerification() {
     } catch (error) {
         messageElement.innerText = "Error connecting to server.";
     }
+}
+
+let searchTimeout = null;
+let currentSelectionIndex = -1;
+
+function setupSearch() {
+    const searchInput = document.getElementById('globalSearchInput');
+    const searchContainer = document.querySelector('.nav-search');
+    const dropdown = document.getElementById('searchDropdown');
+    const searchBtn = document.getElementById('globalSearchBtn');
+
+    if (!searchInput || !searchContainer || !dropdown) return;
+
+    searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.trim();
+        clearTimeout(searchTimeout);
+
+        if (query.length < 2) {
+            closeDropdown();
+            return;
+        }
+
+        searchTimeout = setTimeout(() => performSearch(query), 300);
+    });
+
+    searchInput.addEventListener('keydown', (e) => {
+        const items = document.querySelectorAll('.search-item');
+        if (items.length === 0) return;
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            currentSelectionIndex++;
+            if (currentSelectionIndex >= items.length) currentSelectionIndex = 0;
+            updateSelection(items);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            currentSelectionIndex--;
+            if (currentSelectionIndex < 0) currentSelectionIndex = items.length - 1;
+            updateSelection(items);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (currentSelectionIndex > -1) {
+                items[currentSelectionIndex].click();
+            } else {
+                performSearch(searchInput.value, true);
+            }
+        } else if (e.key === 'Escape') {
+            closeDropdown();
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!searchContainer.contains(e.target)) {
+            closeDropdown();
+        }
+    });
+
+    if (searchBtn) {
+        searchBtn.addEventListener('click', () => {
+            performSearch(searchInput.value, true);
+        });
+    }
+}
+
+async function performSearch(query, forceRedirect = false) {
+    if (forceRedirect) {
+        if (query.includes('#')) {
+            window.location.href = `/profile/${encodeURIComponent(query)}`;
+        } else {
+            window.location.href = `/search?q=${encodeURIComponent(query)}`;
+        }
+        return;
+    }
+
+    try {
+        const response = await fetch(`https://api.axioscomputers.com/api/v1/search/autocomplete?query=${encodeURIComponent(query)}`);
+
+        if (response.ok) {
+            const results = await response.json();
+            renderResults(results);
+        } else {
+            renderResults([
+                { name: query, type: 'Summoner', url: `/profile/${query}`, image: '' },
+                { name: "Ahri", type: "Champion", url: "/champion/ahri", image: "https://ddragon.leagueoflegends.com/cdn/14.1.1/img/champion/Ahri.png" }
+            ]);
+        }
+    } catch (error) {
+        renderResults([
+            { name: query, type: 'Summoner', url: `/profile/${query}`, image: '' },
+            { name: "Ahri", type: "Champion", url: "/champion/ahri", image: "https://ddragon.leagueoflegends.com/cdn/14.1.1/img/champion/Ahri.png" }
+        ]);
+    }
+}
+
+function renderResults(results) {
+    const dropdown = document.getElementById('searchDropdown');
+    const searchContainer = document.querySelector('.nav-search');
+
+    dropdown.innerHTML = '';
+    currentSelectionIndex = -1;
+
+    if (!results || results.length === 0) {
+        closeDropdown();
+        return;
+    }
+
+    results.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'search-item';
+        div.onclick = () => window.location.href = item.url;
+
+        div.innerHTML = `
+            <img src="${item.image || 'assets/default-icon.png'}" alt="">
+            <div class="info">
+                <span class="main-text">${item.name}</span>
+                <span class="sub-text">${item.type}</span>
+            </div>
+        `;
+        dropdown.appendChild(div);
+    });
+
+    searchContainer.classList.add('open');
+}
+
+function updateSelection(items) {
+    items.forEach(item => item.classList.remove('selected'));
+    if (currentSelectionIndex > -1 && items[currentSelectionIndex]) {
+        items[currentSelectionIndex].classList.add('selected');
+    }
+}
+
+function closeDropdown() {
+    const searchContainer = document.querySelector('.nav-search');
+    const dropdown = document.getElementById('searchDropdown');
+
+    if (searchContainer) searchContainer.classList.remove('open');
+    if (dropdown) dropdown.innerHTML = '';
+    currentSelectionIndex = -1;
 }
 
 window.addEventListener('DOMContentLoaded', () => {

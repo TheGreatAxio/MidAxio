@@ -1,15 +1,27 @@
 <div class="nav-left">
-    <a href="index.html" class="nav-logo-link">
+    <a href="index" class="nav-logo-link">
         <img src="assets/midAxioMedium.png" alt="M" class="collapsed-img">
         <img src="assets/midAxioFull.png" alt="midAxio" class="expanded-logo">
     </a>
 </div>
+
+<div class="nav-search">
+    <input type="text" id="globalSearchInput" placeholder="Search anything..." autocomplete="off">
+    <button id="globalSearchBtn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+        </svg>
+    </button>
+
+    <div id="searchDropdown" class="search-dropdown"></div>
+</div>
+
 <div class="nav-right">
     <div id="loggedOutLinks" style="display: flex;">
-        <a href="login.html" class="nav-button">Login</a>
+        <a href="login" class="nav-button">Login</a>
     </div>
 
     <div id="loggedInLinks" style="display: none;">
-        <a href="account.html" class="nav-button">Account</a>
+        <a href="account" class="nav-button">Account</a>
     </div>
 </div>
