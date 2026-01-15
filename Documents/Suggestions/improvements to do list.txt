@@ -1,0 +1,3 @@
+username still doesn't work for login
+add a verify now button instead of account page when user is email verified but not riot verified
+side ad banner, only right side instead of bottom banner
