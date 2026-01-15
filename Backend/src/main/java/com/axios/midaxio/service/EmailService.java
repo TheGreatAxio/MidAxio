@@ -32,7 +32,7 @@ public class EmailService {
         message.setSubject("Reset Your MidAxio Password");
 
         message.setText("To reset your password, please click the link below: " +
-                "https://axioscomputers.com/resetpassword?token=" + token);
+                "https://axioscomputers.com/resetpassword?token=" + token + "&email=" + to);
 
         mailSender.send(message);
     }

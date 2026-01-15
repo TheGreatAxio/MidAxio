@@ -50,7 +50,10 @@ public class AuthService {
         );
 
         var user = userRepository.findByEmail(request.identifier())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                .or(() -> userRepository.findByUsername(request.identifier()))
+                .orElseThrow(() -> new UsernameNotFoundException(
+                        "User not found with that" + request.identifier() + "."
+                ));
 
         var jwtToken = jwtService.generateToken(user.getEmail());
 
@@ -74,31 +77,30 @@ public class AuthService {
 
     public void initiatePasswordReset(String email) {
         userRepository.findByEmail(email).ifPresent(user -> {
-            String token = UUID.randomUUID().toString();
-            user.setResetToken(token);
+            if (user.getResetToken() != null) {
+                user.setResetToken(null);
+                userRepository.save(user);
+            }
+            String rawToken = UUID.randomUUID().toString();
+            user.setResetToken(passwordEncoder.encode(rawToken));
             userService.saveUser(user);
-            emailService.sendPasswordResetEmail(user.getEmail(), token);
+            emailService.sendPasswordResetEmail(user.getEmail(), rawToken);
         });
     }
 
     @Transactional
-    public boolean completePasswordReset(String token, String newPassword) {
-        System.out.println("DEBUG RESET: Token received: " + token);
-        System.out.println("DEBUG RESET: Password received: " + (newPassword == null ? "NULL" : newPassword));
-
+    public boolean completePasswordReset(String email, String rawToken, String newPassword) {
         if (newPassword == null || newPassword.trim().isEmpty()) {
-            throw new IllegalArgumentException("Password cannot be empty or null");
+            throw new IllegalArgumentException("Password cannot be empty");
         }
-
-        return userRepository.findByResetToken(token).map(user -> {
-            String encodedPassword = passwordEncoder.encode(newPassword);
-            System.out.println("DEBUG RESET: Encoded Password: " + encodedPassword);
-
-            user.setPassword(encodedPassword);
-            user.setResetToken(null);
-
-            userRepository.save(user);
-            return true;
+        return userRepository.findByEmail(email).map(user -> {
+            if (user.getResetToken() != null && passwordEncoder.matches(rawToken, user.getResetToken())) {
+                user.setPassword(passwordEncoder.encode(newPassword));
+                user.setResetToken(null);
+                userRepository.save(user);
+                return true;
+            }
+            return false;
         }).orElse(false);
     }
 }

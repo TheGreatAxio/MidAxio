@@ -49,7 +49,7 @@ public class AuthController {
 
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request) {
-        boolean success = authService.completePasswordReset(request.getToken(), request.getNewPassword());
+        boolean success = authService.completePasswordReset(request.getEmail(), request.getToken(), request.getNewPassword());
         if (success) {
             return ResponseEntity.ok("Password updated successfully.");
         }
