@@ -148,18 +148,16 @@ async function fetchUserProfile() {
             const user = await response.json();
 
             if (user.riotLinked) {
-                const authZone = document.getElementById('sidebarAuthZone');
-                if (authZone) {
-                    const profileBtn = document.createElement('div');
-                    profileBtn.className = 'sidebar-item';
-                    profileBtn.title = 'My Profile';
-                    profileBtn.onclick = () => window.location.href = `/profile/${user.gameName}-${user.tagLine}`;
-                    profileBtn.innerHTML = `
-                        <span class="icon">👤</span>
-                        <span class="label">Profile</span>
-                    `;
+                const profileBtn = document.getElementById('userProfileBtn');
+                const nameSpan = document.getElementById('pGameName');
+                const tagSpan = document.getElementById('pTagLine');
 
-                    authZone.insertBefore(profileBtn, authZone.firstChild);
+                if (profileBtn && nameSpan && tagSpan) {
+                    nameSpan.innerText = user.gameName;
+                    tagSpan.innerText = '#' + user.tagLine;
+                    profileBtn.title = `${user.gameName} #${user.tagLine}`;
+                    profileBtn.onclick = () => window.location.href = `/profile/${user.gameName}-${user.tagLine}`;
+                    profileBtn.style.display = 'flex';
                 }
 
                 const vSection = document.querySelector('.verification-section');
@@ -187,51 +185,61 @@ async function fetchUserProfile() {
     }
 }
 
-const verifyBtn = document.getElementById('verifyBtn');
-if (verifyBtn) {
-    verifyBtn.addEventListener('click', async () => {
-        const gameName = document.getElementById('riotName').value;
-        const tagLine = document.getElementById('riotTag').value;
-        const leagueRegion = document.getElementById('regionSelect').value;
-        const messageElement = document.getElementById('verifyMessage');
-        const token = localStorage.getItem('token');
+let verificationStage = "initiate";
 
-        try {
-            messageElement.innerText = "Initiating...";
-            const response = await fetch('https://api.axioscomputers.com/api/v1/user/ign/initiate', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ gameName, tagLine, leagueRegion })
-            });
-            const text = await response.text();
+verifyBtn.addEventListener('click', async () => {
+    if (verificationStage === "initiate") {
+        await initiateVerification();
+    } else if (verificationStage === "confirm") {
+        await confirmVerification();
+    }
+});
 
-            if (response.ok) {
-                const iconId = text.match(/\d+/)[0];
-                const iconUrl = `https://ddragon.leagueoflegends.com/cdn/26.01.1/img/profileicon/${iconId}.png`;
+async function initiateVerification() {
+    const gameName = document.getElementById('riotName').value;
+    const tagLine = removeHash(document.getElementById('riotTag').value);
+    const leagueRegion = document.getElementById('regionSelect').value;
+    const messageElement = document.getElementById('verifyMessage');
+    const iconContainer = document.getElementById('verifyIconContainer');
+    const token = localStorage.getItem('token');
 
-                messageElement.style.color = "white";
-                messageElement.innerHTML = `
-                    <div style="margin: 15px 0; text-align: center;">
-                        <p style="color: orange; font-weight: bold;">Action Required:</p>
-                        <p>Change your League icon to this picture:</p>
-                        <img src="${iconUrl}" alt="Target Icon" style="width: 80px; height: 80px; border: 2px solid #4169e1; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
-                        <p style="font-size: 0.85rem; color: #aaa;">Once changed, click the button below.</p>
-                    </div>
-                `;
+    try {
+        messageElement.style.color = "white";
+        messageElement.innerText = "Initiating...";
 
-                verifyBtn.innerText = "Confirm Icon Change";
-                verifyBtn.onclick = confirmVerification;
-            } else {
-                messageElement.style.color = "red";
-                messageElement.innerText = text || "Initiation failed.";
-            }
-        } catch (error) {
-            messageElement.innerText = "Error connecting to server.";
+        const response = await fetch('https://api.axioscomputers.com/api/v1/auth/ign/initiate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ gameName, tagLine, leagueRegion })
+        });
+
+        const text = await response.text();
+
+        if (response.ok) {
+            const iconId = text.match(/\d+/)[0];
+            const iconUrl = `https://ddragon.leagueoflegends.com/cdn/16.1.1/img/profileicon/${iconId}.png`;
+
+            iconContainer.innerHTML = `
+                <p style="color: orange; font-weight: bold;">Action Required:</p>
+                <p>Change your League icon to this picture:</p>
+                <img src="${iconUrl}" style="width:80px;height:80px;border-radius:8px;border:2px solid #4169e1;">
+                <p style="font-size:0.85rem;color:#aaa;">Once changed, click confirm.</p>
+            `;
+
+            verifyBtn.innerText = "Confirm Icon Change";
+            verificationStage = "confirm";
+            messageElement.innerText = ""; // keep status separate
+        } else {
+            messageElement.style.color = "red";
+            messageElement.innerText = text || "Initiation failed.";
         }
-    });
+    } catch (error) {
+        messageElement.style.color = "red";
+        messageElement.innerText = "Error connecting to server.";
+    }
 }
 
 async function confirmVerification() {
@@ -239,26 +247,44 @@ async function confirmVerification() {
     const messageElement = document.getElementById('verifyMessage');
 
     try {
-        const response = await fetch('https://api.axioscomputers.com/api/v1/user/ign/confirm', {
+        const response = await fetch('https://api.axioscomputers.com/api/v1/auth/ign/confirm', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` }
         });
+
+        let errorText = '';
+        try {
+            errorText = await response.text();
+            if (!errorText) {
+                const data = await response.json().catch(() => null);
+                if (data?.message) errorText = data.message;
+            }
+        } catch {
+            errorText = "Unknown backend error.";
+        }
 
         if (response.ok) {
             messageElement.style.color = "lightgreen";
             messageElement.innerText = "Success! Account linked.";
             setTimeout(() => location.reload(), 1500);
         } else {
-            const errorText = await response.text();
-            messageElement.innerText = errorText || "Icon mismatch. Try again.";
+            messageElement.style.color = "red";
+            messageElement.innerText = errorText || "Verification failed.";
         }
-    } catch (error) {
-        messageElement.innerText = "Error connecting to server.";
+    } catch (networkError) {
+        messageElement.style.color = "red";
+        messageElement.innerText = networkError.message || "Network error connecting to server.";
     }
 }
 
+
 let searchTimeout = null;
 let currentSelectionIndex = -1;
+
+function removeHash(str) {
+    if (str.startsWith('#')) { return str.substring(1); }
+    return str;
+}
 
 function setupSearch(inputId, dropdownId, btnId = null) {
     const searchInput = document.getElementById(inputId);
