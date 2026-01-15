@@ -3,7 +3,8 @@ async function loadComponents() {
         'global-nav': '/components/navbar.html',
         'side-sidebar': '/components/sidebar.html',
         'ad-footer': '/components/footer.html',
-        'region-selector-container': '/components/region-selector.html'
+        'region-selector-container': '/components/region-selector.html',
+        'legal-footer': '/components/legal-footer.html'
     };
 
     const promises = Object.entries(components).map(async ([className, filePath]) => {
