@@ -2,9 +2,9 @@ async function loadComponents() {
     const components = {
         'global-nav': '/components/navbar.html',
         'side-sidebar': '/components/sidebar.html',
-        'ad-footer': '/components/footer.html',
+        'ad-footer': '/components/ad-footer.html',
         'region-selector-container': '/components/region-selector.html',
-        'legal-footer': '/components/legal-footer.html'
+        'info-footer': '/components/info-footer.html'
     };
 
     const promises = Object.entries(components).map(async ([className, filePath]) => {
@@ -59,19 +59,35 @@ function updateAuthUI() {
     const authZone = document.getElementById('sidebarAuthZone');
     if (authZone && token) {
         authZone.innerHTML = `
+            <div class="sidebar-item" id="settingsSidebarItem" title="Settings">
+                <span class="icon">⚙️</span>
+                <span class="label">Settings</span>
+            </div>
             <div class="sidebar-item" id="logoutBtn" title="Logout">
                 <span class="icon">🚪</span>
                 <span class="label">Logout</span>
             </div>
         `;
-        document.getElementById('logoutBtn').addEventListener('click', () => {
-            localStorage.removeItem('token');
-            window.location.href = '/';
-        });
+
+        const settingsItem = document.getElementById('settingsSidebarItem');
+        if (settingsItem) {
+            settingsItem.addEventListener('click', () => {
+                window.location.href = '/settings';
+            });
+        }
+
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                localStorage.removeItem('token');
+                window.location.href = '/';
+            });
+        }
     } else if (authZone) {
         authZone.innerHTML = '';
     }
 }
+
 
 const signupForm = document.getElementById('signupForm');
 if (signupForm) {
@@ -188,13 +204,16 @@ async function fetchUserProfile() {
 
 let verificationStage = "initiate";
 
-verifyBtn.addEventListener('click', async () => {
-    if (verificationStage === "initiate") {
-        await initiateVerification();
-    } else if (verificationStage === "confirm") {
-        await confirmVerification();
-    }
-});
+const verifyBtn = document.getElementById('verifyBtn');
+if (verifyBtn) {
+    verifyBtn.addEventListener('click', async () => {
+        if (verificationStage === "initiate") {
+            await initiateVerification();
+        } else if (verificationStage === "confirm") {
+            await confirmVerification();
+        }
+    });
+}
 
 async function initiateVerification() {
     const gameName = document.getElementById('riotName').value;
@@ -232,7 +251,7 @@ async function initiateVerification() {
 
             verifyBtn.innerText = "Confirm Icon Change";
             verificationStage = "confirm";
-            messageElement.innerText = ""; // keep status separate
+            messageElement.innerText = "";
         } else {
             messageElement.style.color = "red";
             messageElement.innerText = text || "Initiation failed.";

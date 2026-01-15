@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>midAxio - Settings</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1913229720945156"
+            crossorigin="anonymous"></script>
+</head>
+<body>
+<nav class="global-nav"></nav>
+<aside class="side-sidebar"></aside>
+
+<main class="main-container">
+    <div class="auth-container">
+        <h1>Account Settings</h1>
+        <div id="userProfile">
+            <p>Loading account...</p>
+        </div>
+        <p id="unlinkMessage"></p>
+        <button id="unlinkBtn" class="nav-button" style="display:none;">
+            Unlink Riot Account
+        </button>
+    </div>
+</main>
+
+<footer class="ad-footer"></footer>
+<footer class="info-footer"></footer>
+
+<script src="js/script.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const unlinkBtn = document.getElementById('unlinkBtn');
+        const unlinkMsg = document.getElementById('unlinkMessage');
+
+        if (unlinkBtn) {
+            unlinkBtn.addEventListener('click', async () => {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    unlinkMsg.textContent = 'You must be logged in.';
+                    unlinkMsg.style.color = 'red';
+                    return;
+                }
+
+                try {
+                    const res = await fetch('https://api.axioscomputers.com/api/v1/user/unlinkRiot', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+
+                    if (!res.ok) {
+                        unlinkMsg.textContent = 'Failed to unlink Riot account.';
+                        unlinkMsg.style.color = 'red';
+                        return;
+                    }
+
+                    const user = await res.json();
+                    unlinkMsg.textContent = 'Riot account unlinked.';
+                    unlinkMsg.style.color = 'lightgreen';
+
+                    const profileDiv = document.getElementById('userProfile');
+                    if (profileDiv) {
+                        const riotStatusHTML = user.riotLinked
+                            ? `<span style="color: lightgreen;">✅ Linked (${user.gameName}#${user.tagLine})</span>`
+                            : `<span style="color: orange;">❌ Not Linked</span>`;
+
+                        profileDiv.innerHTML = `
+                        <div class="profile-details">
+                            <p><strong>Email:</strong> ${user.email}</p>
+                            <p><strong>Riot Account:</strong> ${riotStatusHTML}</p>
+                        </div>
+                    `;
+                    }
+
+                    if (!user.riotLinked) {
+                        unlinkBtn.style.display = 'none';
+                    }
+                } catch (e) {
+                    unlinkMsg.textContent = 'Error connecting to server.';
+                    unlinkMsg.style.color = 'red';
+                }
+            });
+        }
+    });
+</script>
+</body>
+</html>
