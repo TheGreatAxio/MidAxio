@@ -28,7 +28,7 @@ body {
     top: 0;
     left: 0;
     width: 100%;
-    height: 60px;
+    height: 80px;
     background-color: #4169e1;
     display: flex;
     justify-content: space-between;
@@ -41,7 +41,7 @@ body {
 .nav-left {
     display: flex;
     align-items: center;
-    height: 100%;
+    height: 99%;
     width: 200px;
 }
 
@@ -55,15 +55,27 @@ body {
 .collapsed-img, .expanded-logo {
     position: absolute;
     left: 0;
-    top: 50%;
-    transform: translateY(-50%);
+    top: -12%;
+    transform: translateY(-50px);
+    transform: translateX(-60px);
     transition: opacity 0.3s ease;
     object-fit: contain;
-    height: 40px;
+    height: 67px;
+}
+
+.expanded-logo {
+    position: absolute;
+    left: 200;
+    top: -12%;
+    transform: translateY(-40px);
+    transform: translateX(-20px);
+    transition: opacity 0.3s ease;
+    object-fit: contain;
+    height: 67px;
 }
 
 .collapsed-img {
-    width: 40px;
+    width: 150px;
     opacity: 1;
 }
 
